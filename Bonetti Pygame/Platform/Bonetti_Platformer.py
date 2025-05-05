@@ -3,6 +3,9 @@ from pygame.locals import *
 
 pygame.init()
 
+clock = pygame.time.Clock()
+fps = 60
+
 screen_width = 1000
 screen_height = 1000
 screen = pygame.display.set_mode((screen_width, screen_height))
@@ -10,23 +13,37 @@ pygame.display.set_caption("Platformer")
 
 tile_size = 50
 
+
 sun_img = pygame.image.load('img/sun.png')
 bg_img = pygame.image.load('img/sky.png')
 
 
 class Player():
     def __init__(self, x, y):
-        img = pygame.image.load('img/guy1.png')
-        self.image = pygame.transform.scale(img, (40, 80))
+        self.images_right = []
+        self.images_left = []
+        self.index = 0
+        self.counter = 0
+        for num in range(1,5):
+            img_right = pygame.image.load(f'img/guy{num}.png')
+            img_right = pygame.transform.scale(img_right, (40, 80))
+            img_left = pygame.transform.flip(img_right, True, False)
+            self.images_right.append(img_right)
+            self.images_left.append(img_left)
+
+
+        self.image = self.images_right[self.index]
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
         self.vel_y = 0
         self.jumped = False
+        self.direction = 0
 
     def update(self):
         dx = 0
         dy = 0
+        walk_cooldown = 5
         
         key = pygame.key.get_pressed()
         if key[pygame.K_SPACE] and self.jumped == False:
@@ -36,8 +53,32 @@ class Player():
             self.jumped = False
         if key[pygame.K_RIGHT]:
             dx += 5
+            self.counter += 1
+            self.direction = 1
         if key[pygame.K_LEFT]:
             dx -= 5
+            self.counter += 1
+            self.direction = -1
+
+        if key[pygame.K_RIGHT] == False and key[pygame.K_LEFT] == False:
+            self.counter = 0
+            self.index = 0
+            if self.direction == 1:
+                self.image = self.images_right[self.index]
+            if self.direction == -1:
+                self.image = self.images_left[self.index]
+    
+        if self.counter > walk_cooldown:
+            self.counter = 0
+            self.index += 1
+            if self.index >= len(self.images_right):
+                self.index = 0
+            if self.direction == 1:
+                self.image = self.images_right[self.index]
+            if self.direction == -1:
+                self.image = self.images_left[self.index]
+            
+            
         self.vel_y += 1
         if self.vel_y > 10:
             self.vel_y = 10
@@ -112,6 +153,8 @@ world = World(world_data)
 
 run = True
 while run:
+    
+    clock.tick(fps)
 
     screen.blit(bg_img, (0, 0))
     screen.blit(sun_img, (100, 100))
