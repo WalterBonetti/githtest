@@ -1,8 +1,11 @@
 import pygame
 from pygame.locals import *
+from pygame import mixer
 import pickle
 from os import path
 
+pygame.mixer.pre_init(44100, -16, 2, 512)
+mixer.init()
 pygame.init()
 
 clock = pygame.time.Clock()
@@ -32,6 +35,15 @@ restart_img = pygame.image.load('img/restart_btn.png')
 start_img = pygame.image.load('img/start_btn.png')
 exit_img = pygame.image.load('img/exit_btn.png')
 
+coin_fx = pygame.mixer.Sound('img/coin.wav')
+coin_fx.set_volume(0.5)
+jump_fx = pygame.mixer.Sound('img/jump.wav')
+jump_fx.set_volume(0.5)
+game_over_fx = pygame.mixer.Sound('img/game_over.wav')
+game_over_fx.set_volume(0.5)
+
+pygame.mixer.music.load('img/music.wav')
+pygame.mixer.music.play(-1, 0.0, 10000)
 
 def draw_text(text, font, text_col, x, y):
     img = font.render(text, True, text_col)
@@ -86,6 +98,7 @@ class Player():
         if game_over == 0:
             key = pygame.key.get_pressed()
             if key[pygame.K_SPACE] and self.jumped == False:
+                jump_fx.play()
                 self.vel_y = -15
                 self.jumped = True
                 self.col = False
@@ -140,9 +153,11 @@ class Player():
 
             if pygame.sprite.spritecollide(self, blob_group, False):
                 game_over = -1
+                game_over_fx.play()
 
             if pygame.sprite.spritecollide(self, lava_group, False):
                 game_over = -1
+                game_over_fx.play()
 
             if pygame.sprite.spritecollide(self, exit_group, False):
                 game_over = 1
@@ -313,6 +328,7 @@ while run:
         if game_over == 0:
             blob_group.update()
             if pygame.sprite.spritecollide(player, coin_group, True):
+                coin_fx.play()
                 score += 1
             draw_text('X ' + str(score), font_score, white, tile_size - 10, 10)
             
