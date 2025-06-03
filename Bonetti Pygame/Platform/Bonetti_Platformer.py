@@ -55,6 +55,7 @@ def reset_level(level):
     blob_group.empty()
     lava_group.empty()
     exit_group.empty()
+    platform_group.empty()
     if path.exists(f'Platformer/level{level}_data'):
         pickle_in = open(f'Platformer/level{level}_data', 'rb')
         world_data = pickle.load(pickle_in)
@@ -94,6 +95,7 @@ class Player():
         dx = 0
         dy = 0
         walk_cooldown = 5
+        col_thresh = 20
 
         if game_over == 0:
             key = pygame.key.get_pressed()
@@ -161,6 +163,22 @@ class Player():
 
             if pygame.sprite.spritecollide(self, exit_group, False):
                 game_over = 1
+
+            for platform in platform_group:
+                if platform.rect.colliderect(self.rect.x + dx, self.rect.y, self.width, self.height):
+                    dx = 0
+                if platform.rect.colliderect(self.rect.x, self.rect.y + dy, self.width, self.height):
+                    if abs((self.rect.top + dy) - platform.rect.bottom) < col_thresh:
+                        self.vel_y = 0
+                        dy = platform.rect.bottom - self.rect.top
+                    elif abs((self.rect.bottom + dy) - platform.rect.top) < col_thresh:
+                        self.rect.bottom = platform.rect.top - 1
+                        dy = 0
+                        self.col = True
+
+                    if platform.move_x != 0:
+                        self.rect.x += platform.move_direction
+                
             
             self.rect.x += dx
             self.rect.y += dy
@@ -172,7 +190,6 @@ class Player():
                 self.rect.y -= 5
         
         screen.blit(self.image, self.rect)
-        pygame.draw.rect(screen, (255, 255, 255), self.rect, 2)
 
         return game_over
 
@@ -250,7 +267,7 @@ class World():
     def draw(self):
         for tile in self.tile_list:
             screen.blit(tile[0], tile[1])
-            pygame.draw.rect(screen, (255, 255, 255), tile[1], 2)
+
 
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, x, y):
